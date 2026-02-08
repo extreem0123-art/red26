@@ -1,0 +1,1125 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+    />
+    <title>RED 2026</title>
+    <!-- Telegram WebApp SDK -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <!-- 🔗 Подключение Google Fonts -->
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Digital+7&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Tektur:wght@400..900&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      /* 🎛️ Глобальные CSS-переменные — только тёмная тема */
+      :root {
+        --bg: #0f172a;
+        --text: #ffffff;
+        --muted: #9ca3af;
+        --accent: #fc3f1d;
+        --card-bg: #1f2937;
+        --border: #000000;
+        --input-bg: #374151;
+        --modal-bg: #1f2937;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        overflow-x: hidden;
+      }
+      body {
+        font-family: "Tektur", "Inter", sans-serif;
+        color: var(--text);
+        line-height: 1.6;
+        background: var(--bg);
+      }
+      .container {
+        width: 100%;
+        max-width: 1000px;
+        margin: 0 auto;
+        padding: 0 16px;
+      }
+      /* 🏛️ Блок заголовка */
+      .header {
+        padding: 24px 0 16px;
+        text-align: center;
+      }
+      .logo img {
+        max-width: 100%;
+        max-height: 100px;
+        height: auto;
+        display: inline-block;
+      }
+      .header__title {
+        margin: 8px 0;
+        font-size: 2rem;
+        font-weight: 700;
+        color: var(--accent);
+      }
+      .header__tagline {
+        margin: 0;
+        opacity: 0.9;
+      }
+      /* 📢 Бегущая строка */
+      .ticker {
+        width: 100%;
+        overflow: hidden;
+        white-space: nowrap;
+        padding: 10px 0;
+        margin: 12px 0;
+        background: none;
+      }
+      .ticker-wrapper {
+        display: inline-flex;
+        animation: ticker-scroll 20s linear infinite;
+      }
+      .ticker-content {
+        display: inline-flex;
+        align-items: center;
+        font-family: "Digital 7", monospace;
+        font-size: 20px;
+        color: white;
+        white-space: nowrap;
+      }
+      @keyframes ticker-scroll {
+        0% {
+          transform: translateX(0);
+        }
+        100% {
+          transform: translateX(-50%);
+        }
+      }
+      /* ⏳ Таймер */
+      .timer {
+        display: flex;
+        justify-content: center;
+        gap: 12px;
+        padding: 12px;
+        margin: 16px auto;
+        max-width: 500px;
+      }
+      .timer__item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        min-width: 50px;
+      }
+      .timer__num {
+        font-family: "Digital 7", monospace;
+        font-size: 36px;
+        color: var(--accent);
+      }
+      .timer__label {
+        font-family: "Digital 7", monospace;
+        font-size: 14px;
+        color: var(--accent);
+        text-transform: uppercase;
+      }
+      /* Расписание */
+      .schedule {
+        padding: 20px 0;
+        display: none;
+      }
+      .schedule.active {
+        display: block;
+      }
+      .schedule__title {
+        text-align: center;
+        font-size: 1.8rem;
+        margin: 0 0 16px;
+      }
+      .schedule__list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: grid;
+        gap: 8px;
+      }
+      .schedule__item {
+        background: rgba(31, 41, 55, 0.5);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 24px;
+        padding: 14px;
+        display: grid;
+        grid-template-columns: auto 1fr auto;
+        gap: 12px;
+        align-items: start;
+      }
+      .schedule__item--break {
+        grid-template-columns: 1fr;
+        text-align: center;
+        background: rgba(55, 65, 81, 0.4);
+      }
+      .schedule__time {
+        font-weight: 700;
+        color: var(--accent);
+        font-size: 22px;
+        min-width: 90px;
+      }
+      .schedule__open {
+        border: none;
+        background: var(--accent);
+        color: white;
+        padding: 8px 16px;
+        border-radius: 30px;
+        font-weight: 700;
+        cursor: pointer;
+        font-size: 16px;
+      }
+      /* 🪟 Модальное окно */
+      .modal {
+        position: fixed;
+        inset: 0;
+        display: none;
+        z-index: 1000;
+      }
+      .modal.is-open {
+        display: block;
+      }
+      .modal__overlay {
+        position: absolute;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.6);
+      }
+      .modal__dialog {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        background: var(--modal-bg);
+        width: 92vw;
+        max-width: 600px;
+        max-height: 80vh;
+        border-radius: 24px;
+        padding: 16px;
+        overflow: auto;
+      }
+      .modal__close {
+        float: right;
+        background: var(--card-bg);
+        border: none;
+        color: white;
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        font-weight: bold;
+        cursor: pointer;
+      }
+      /* ✅ КАРУСЕЛЬ */
+      .carousel-expanded {
+        position: relative;
+        height: 300px;
+        margin: 16px 0;
+        overflow: hidden;
+      }
+      .carousel-expanded__list {
+        display: flex;
+        gap: 12px;
+        padding: 12px 0;
+        overflow-x: auto;
+        scroll-behavior: smooth;
+        scrollbar-width: none;
+      }
+      .carousel-expanded__list::-webkit-scrollbar {
+        display: none;
+      }
+      .carousel-expanded__slide {
+        flex: 0 0 200px;
+        height: 260px;
+        border-radius: 12px;
+        background: #fff no-repeat center 20% / cover;
+        position: relative;
+        overflow: hidden;
+        cursor: pointer;
+        opacity: 0.8;
+      }
+      .carousel-expanded__slide.active {
+        flex: 0 0 260px;
+        height: 280px;
+        opacity: 1;
+        z-index: 10;
+        box-shadow: 0 8px 20px rgba(252, 63, 29, 0.3);
+      }
+      .carousel-expanded__content {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        padding: 0 16px 16px;
+        color: white;
+        opacity: 0;
+        transform: translateY(20px);
+        transition: all 0.3s ease;
+      }
+      .carousel-expanded__slide:hover .carousel-expanded__content,
+      .carousel-expanded__slide.active .carousel-expanded__content {
+        opacity: 1;
+        transform: translateY(0);
+      }
+      .carousel-expanded__content h4 {
+        font-size: 18px;
+        margin: 0 0 4px;
+        color: white;
+      }
+      .carousel-expanded__content p {
+        font-size: 13px;
+        margin: 0;
+        color: rgba(255, 255, 255, 0.9);
+      }
+      .carousel-indicators {
+        display: flex;
+        justify-content: center;
+        gap: 8px;
+        margin-top: 12px;
+      }
+      .carousel-indicator {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--muted);
+        cursor: pointer;
+      }
+      .carousel-indicator.active {
+        background: var(--accent);
+        transform: scale(1.2);
+      }
+      /* ❓ FAQ */
+      .faq {
+        padding: 20px 0;
+      }
+      .faq__title {
+        font-size: 1.8rem;
+        margin-bottom: 16px;
+      }
+      .faq-item {
+        background: rgba(31, 41, 55, 0.5);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 12px;
+        margin-bottom: 8px;
+      }
+      .faq-item__question {
+        width: 100%;
+        padding: 12px 16px;
+        background: transparent;
+        border: none;
+        color: var(--text);
+        font-weight: 600;
+        font-size: 18px;
+        text-align: left;
+        cursor: pointer;
+        display: flex;
+        justify-content: space-between;
+      }
+      .faq-item__answer {
+        padding: 0 16px 12px;
+        color: var(--muted);
+        font-size: 16px;
+        line-height: 1.5;
+        max-height: 0;
+        overflow: hidden;
+        transition:
+          max-height 0.3s ease,
+          padding 0.3s ease;
+      }
+      .faq-item[aria-expanded="true"] .faq-item__answer {
+        padding: 0 16px 12px;
+        max-height: 500px;
+      }
+      /* 🗺️ Карта */
+      .map {
+        padding: 20px 0;
+      }
+      .map__title {
+        font-size: 1.8rem;
+        margin-bottom: 12px;
+      }
+      .map__directionsBtn {
+        display: inline-block;
+        background: var(--accent);
+        color: white;
+        padding: 10px 16px;
+        border-radius: 10px;
+        text-decoration: none;
+        font-weight: 700;
+      }
+      /* 📜 Футер */
+      .footer {
+        border-top: 1px solid rgba(255, 255, 255, 0.05);
+        padding: 12px 0;
+        margin-top: 20px;
+        text-align: center;
+        font-size: 14px;
+        color: var(--muted);
+      }
+      /* Адаптивность */
+      @media (max-width: 480px) {
+        .schedule__item {
+          grid-template-columns: 1fr;
+          text-align: center;
+        }
+        .schedule__time {
+          margin-bottom: 8px;
+          font-size: 1.2rem;
+        }
+        .schedule__open {
+          width: 100%;
+          margin-top: 8px;
+        }
+        .carousel-expanded {
+          height: 240px;
+        }
+        .carousel-expanded__slide {
+          flex: 0 0 160px;
+          height: 200px;
+        }
+        .carousel-expanded__slide.active {
+          flex: 0 0 220px;
+          height: 220px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header class="header">
+      <div class="container">
+        <div class="logo">
+          <img src="img/red.png" alt="Логотип RED 2026" />
+        </div>
+        <h1 class="header__title" id="eventTitle">RED 2026</h1>
+        <p class="header__tagline" id="eventTagline">Для умных и свободных</p>
+      </div>
+      <div class="timer" id="countdown"></div>
+      <div class="ticker">
+        <div class="ticker-wrapper">
+          <span class="ticker-content">
+            Добро пожаловать на весеннюю сессию RED 2026
+            <img
+              src="img/red.png"
+              alt=""
+              style="height: 28px; margin: 0 4px; vertical-align: middle"
+            />
+          </span>
+          <span class="ticker-content">
+            Добро пожаловать на весеннюю сессию RED 2026
+            <img
+              src="img/red.png"
+              alt=""
+              style="height: 28px; margin: 0 4px; vertical-align: middle"
+            />
+          </span>
+        </div>
+      </div>
+    </header>
+
+    <main class="container">
+      <section class="schedule" aria-labelledby="scheduleTitle">
+        <h2 class="schedule__title" id="scheduleTitle">Повестка сессии</h2>
+        <ul class="schedule__list" id="scheduleList"></ul>
+      </section>
+
+      <div class="modal" id="slotModal" aria-hidden="true">
+        <div class="modal__overlay" data-close="true"></div>
+        <div class="modal__dialog" role="dialog" aria-modal="true">
+          <button type="button" class="modal__close" id="modalClose">×</button>
+          <h3 class="modal__title" id="modalTitle"></h3>
+          <div class="modal__desc" id="modalDesc"></div>
+          <div class="carousel-expanded">
+            <div class="carousel-expanded__list" id="carouselTrack"></div>
+          </div>
+          <div class="carousel-indicators" id="carouselIndicators"></div>
+        </div>
+      </div>
+
+      <section class="faq" aria-labelledby="faqHeading">
+        <h2 class="faq__title" id="faqHeading">Частые вопросы</h2>
+        <div class="faq__list" id="faqList"></div>
+      </section>
+
+      <section class="map" aria-labelledby="mapTitle">
+        <h2 class="map__title" id="mapTitle">Карта</h2>
+        <a
+          class="map__directionsBtn"
+          id="directionsLink"
+          href="#"
+          target="_blank"
+          rel="noopener"
+          >Как добраться</a
+        >
+      </section>
+    </main>
+
+    <footer class="footer">
+      <div class="container">
+        <p>© <span id="yearCopy"></span> design by A.S.</p>
+        <p>
+          Связь:
+          <a href="mailto:dus@alfabank.ru" style="color: var(--accent)"
+            >dus@alfabank.ru</a
+          >
+        </p>
+      </div>
+    </footer>
+
+    <script>
+      // === TELEGRAM INIT ===
+      if (window.Telegram?.WebApp) {
+        Telegram.WebApp.ready();
+        Telegram.WebApp.expand();
+        Telegram.WebApp.setHeaderColor("#0f172a");
+        Telegram.WebApp.setBackgroundColor("#0f172a");
+      }
+
+      // === КОНСТАНТЫ ===
+      const EVENT_TITLE = "Весенняя сессия";
+      const EVENT_TAGLINE = "19 марта 2026";
+      const EVENT_START_ISO = "2026-03-19T09:30:00+03:00";
+      const EVENT_ADDRESS = "Москва, улица Маши Порываевой, д. 7сГ";
+      const MAP_TOOLTIP_TEXT = "АО Альфа-Банк";
+      const SCHEDULE_VISIBLE = true;
+      const PLACEHOLDER_PHOTO =
+        "image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Crect width='100' height='100' fill='%23374151'/%3E%3Ctext x='50%25' y='53%25' dominant-baseline='middle' text-anchor='middle' font-family='Arial' font-size='14' fill='%23999'%3EФото%3C/text%3E%3C/svg%3E";
+
+      const SCHEDULE = [
+        {
+          id: "slot-1030-open",
+          start: "10:30",
+          end: "",
+          title: "Открытие сессии",
+          isBreak: false,
+          topics: [""],
+        },
+        {
+          id: "slot-1030-1100",
+          start: "10:30",
+          end: "11:00",
+          title: "Руководство Банка",
+          isBreak: false,
+          topics: [""],
+          speakers: [
+            {
+              id: "speaker-2",
+              name: "Владимир Верхошинский",
+              positionCompany: "Главный управляющий директор",
+              photoUrl:
+                "https://globalmsk.ru/usr/upload/upload-16932359720.jpg",
+            },
+            {
+              id: "speaker-3",
+              name: "Андрей Борисович Соколов",
+              positionCompany: "Председатель правления",
+              photoUrl:
+                "https://whoiswho.obs.ru-moscow-1.hc.sbercloud.ru/images/person/1873123/439374f9-a865-47ce-828f-0429b42e06e5.jpg",
+            },
+            {
+              id: "speaker-4",
+              name: "Олег Николаевич Сысуев",
+              positionCompany: "Председатель Совета директоров",
+              photoUrl:
+                "https://www.globalmsk.ru/usr/person/big-person-16795778851.png",
+            },
+          ],
+        },
+        {
+          id: "slot-1100-1105",
+          start: "11:00",
+          end: "11:05",
+          title: "Статусы исполнения поручений RED",
+          isBreak: false,
+          topics: [""],
+          speakers: [
+            {
+              id: "speaker-1",
+              name: "Елена Тятенкова",
+              positionCompany:
+                "Старший вице-президент, Руководитель департамента",
+              photoUrl:
+                "https://bosfera.ru/img/conf/2021/fincx21/tatenkova.jpg",
+            },
+          ],
+        },
+        {
+          id: "slot-1105-1205",
+          start: "11:05",
+          end: "12:05",
+          title: "Панельная дискуссия",
+          isBreak: false,
+          topics: [""],
+          speakers: [
+            {
+              id: "speaker-2",
+              name: "Владимир Верхошинский",
+              positionCompany: "Главный управляющий директор",
+              photoUrl:
+                "https://globalmsk.ru/usr/upload/upload-16932359720.jpg",
+            },
+            {
+              id: "speaker-6",
+              name: "Владимир Воейков",
+              positionCompany: "Директор крупного и среднего бизнеса",
+              photoUrl:
+                "https://news.store.rambler.ru/img/7262ed2b42c0927e4df4cc8de2479647?img-format=auto&img-1-resize=height:350,fit:max&img-2-filter=sharpen",
+            },
+            {
+              id: "speaker-7",
+              name: "Денис Осин",
+              positionCompany: "Директор малого и микробизнеса",
+              photoUrl: "https://alfabusiness.rbc.ru/images/persons/4@2x.jpg",
+            },
+            {
+              id: "speaker-5",
+              name: "Алексей Гиязов",
+              positionCompany: "Директор розничного бизнеса",
+              photoUrl:
+                "https://avatars.mds.yandex.net/get-entity_search/1993342/993685183/S600xU_2x",
+            },
+            {
+              id: "speaker-8",
+              name: "Марат Исмагулов",
+              positionCompany: "Директор по управлению человеческим капиталом",
+              photoUrl:
+                "https://static.tildacdn.com/tild3339-3934-4438-a363-373835303461/2.png",
+            },
+            {
+              id: "speaker-9",
+              name: "Михаил Березов",
+              positionCompany: "Главный финансовый директор",
+              photoUrl: "img/speakers/ber.png",
+            },
+          ],
+        },
+        {
+          id: "slot-1205-1235",
+          start: "12:05",
+          end: "12:35",
+          title: "Награждение лучших Регионов / Дивизионалов 2025",
+          isBreak: false,
+          topics: [""],
+          speakers: [
+            {
+              id: "speaker-2",
+              name: "Владимир Верхошинский",
+              positionCompany: "Главный управляющий директор",
+              photoUrl:
+                "https://globalmsk.ru/usr/upload/upload-16932359720.jpg",
+            },
+            {
+              id: "speaker-3",
+              name: "Андрей Борисович Соколов",
+              positionCompany: "Председатель правления",
+              photoUrl:
+                "https://whoiswho.obs.ru-moscow-1.hc.sbercloud.ru/images/person/1873123/439374f9-a865-47ce-828f-0429b42e06e5.jpg",
+            },
+            {
+              id: "speaker-1",
+              name: "Елена Тятенкова",
+              positionCompany:
+                "Старший вице-президент, Руководитель департамента",
+              photoUrl:
+                "https://bosfera.ru/img/conf/2021/fincx21/tatenkova.jpg",
+            },
+          ],
+        },
+        {
+          id: "slot-1235-1245",
+          start: "12:35",
+          end: "12:45",
+          title: "Фотосессия",
+          isBreak: false,
+          topics: [""],
+        },
+        {
+          id: "slot-1245-1400",
+          start: "12:45",
+          end: "14:00",
+          title: "Обед",
+          isBreak: true,
+          topics: [],
+          speakers: [],
+          location: "Столовая, Зона 'Е'",
+        },
+        {
+          id: "slot-1400-1440",
+          start: "14:00",
+          end: "14:40",
+          title: "РБ",
+          isBreak: false,
+          topics: ["Q&A - сессия"],
+          speakers: [
+            {
+              id: "speaker-5",
+              name: "Алексей Гиязов",
+              positionCompany: "Директор розничного бизнеса",
+              photoUrl:
+                "https://avatars.mds.yandex.net/get-entity_search/1993342/993685183/S600xU_2x",
+            },
+            {
+              id: "speaker-10",
+              name: "Александра Алтухова",
+              positionCompany: "Директор по розничным продажам",
+              photoUrl:
+                "https://job.alfabank.ru/files/2303280650_f9a5062e70e34e20bdaa1856d0576897.jpg",
+            },
+          ],
+        },
+        {
+          id: "slot-1440-1520",
+          start: "14:40",
+          end: "15:20",
+          title: "КБ",
+          isBreak: false,
+          topics: ["Q&A - сессия"],
+          speakers: [
+            {
+              id: "speaker-6",
+              name: "Владимир Воейков",
+              positionCompany: "Директор крупного и среднего бизнеса",
+              photoUrl:
+                "https://news.store.rambler.ru/img/7262ed2b42c0927e4df4cc8de2479647?img-format=auto&img-1-resize=height:350,fit:max&img-2-filter=sharpen",
+            },
+            {
+              id: "speaker-11",
+              name: "Евгений Монин",
+              positionCompany:
+                "Старший вице-президент, Руководитель департамента",
+              photoUrl:
+                "https://cdn.forbes.ru/forbes-static/c/1816x1022/new/2025/12/resized-image-17-694e4d3549b1f.webp",
+            },
+            {
+              id: "speaker-12",
+              name: "Денис Кутасов",
+              positionCompany:
+                "Старший вице-президент, Руководитель департамента",
+              photoUrl:
+                "https://im2.kommersant.ru/Issues.photo/TEMA2/2025/021/KMO_120929_07996_1_t241_190030.webp",
+            },
+          ],
+        },
+        {
+          id: "slot-1520-1600",
+          start: "15:20",
+          end: "16:00",
+          title: "ММБ",
+          isBreak: false,
+          topics: ["Q&A - сессия"],
+          speakers: [
+            {
+              id: "speaker-7",
+              name: "Денис Осин",
+              positionCompany: "Директор малого и микробизнеса",
+              photoUrl: "https://alfabusiness.rbc.ru/images/persons/4@2x.jpg",
+            },
+            {
+              id: "speaker-13",
+              name: "Кирилл Назимко",
+              positionCompany: "Директор по продажам малого и микробизнеса",
+              photoUrl: "img/speakers/naz.png",
+            },
+          ],
+        },
+        {
+          id: "slot-1600-1620",
+          start: "16:00",
+          end: "16:20",
+          title: "Кофе-брейк",
+          isBreak: true,
+          topics: [],
+          speakers: [],
+        },
+        {
+          id: "slot-1620-1640",
+          start: "16:20",
+          end: "16:40",
+          title: "Казначейство",
+          isBreak: false,
+          topics: ["Q&A - сессия"],
+          speakers: [
+            {
+              id: "speaker-14",
+              name: "Сергей Сидельников",
+              positionCompany: "Руководитель казначейства",
+              photoUrl: "img/speakers/sid.png",
+            },
+          ],
+        },
+        {
+          id: "slot-1640-1700",
+          start: "16:40",
+          end: "17:00",
+          title: "Сервис и взыскание",
+          isBreak: false,
+          topics: ["Q&A - сессия"],
+          speakers: [
+            {
+              id: "speaker-15",
+              name: "Нино Кодуа",
+              positionCompany: "Главный операционный директор",
+              photoUrl:
+                "https://fcongress.forbes.ru/assets/images/photos/yxf7k1.png",
+            },
+          ],
+        },
+        {
+          id: "slot-1700-1720",
+          start: "17:00",
+          end: "17:20",
+          title: "Маркетинг",
+          isBreak: false,
+          topics: ["Q&A - сессия"],
+          speakers: [
+            {
+              id: "speaker-16",
+              name: "Тимур Зулкарнаев",
+              positionCompany:
+                "Директор по маркетингу, дизайну и привлечению клиентов",
+              photoUrl:
+                "https://adindex.ru/assets/talks/content_images/2023_12/speaker_318430_1.JPG",
+            },
+          ],
+        },
+        {
+          id: "slot-1720-1740",
+          start: "17:20",
+          end: "17:40",
+          title: "Сеть",
+          isBreak: false,
+          topics: ["Q&A - сессия"],
+          speakers: [
+            {
+              id: "speaker-1",
+              name: "Елена Тятенкова",
+              positionCompany:
+                "Старший вице-президент, Руководитель департамента",
+              photoUrl:
+                "https://bosfera.ru/img/conf/2021/fincx21/tatenkova.jpg",
+            },
+          ],
+        },
+      ];
+
+      const FAQ_DATA = [
+        {
+          question: "Какой стиль одежды на мероприятии?",
+          answer:
+            "Стиль - Smart Casual. Это баланс элегантности и комфорта. Выбирайте утончённые базовые вещи: например, тёмные джинсы или чиносы с блейзером, однотонную рубашку, джемпер и пиджак. Завершат образ аккуратные кроссовки, лоферы или ботинки, создавая впечатление собранности без строгости классического костюма.",
+        },
+        {
+          question: "Где посмотреть фото после мероприятия?",
+          answer:
+            "Фотографии будут отправлены всем участникам конференции по корпоративной почте",
+        },
+        {
+          question: "Будут ли трансляции?",
+          answer:
+            "Да, трансляция будет только для приглашенных участников конференции, передача ссылки для подключения строго запрещена",
+        },
+        {
+          question: "Можно ли привести гостя?",
+          answer:
+            "Пересылать приглашение на конференцию или приходить с коллегами, которых нет в списках - нельзя",
+        },
+      ];
+
+      // === ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ===
+      function el(tag, className, text) {
+        const node = document.createElement(tag);
+        if (className) node.className = className;
+        if (text != null) node.textContent = text;
+        return node;
+      }
+      function timeToMinutes(t) {
+        const p = String(t).split(":");
+        return (parseInt(p[0], 10) || 0) * 60 + (parseInt(p[1], 10) || 0);
+      }
+      function sortByStart(a, b) {
+        return timeToMinutes(a.start) - timeToMinutes(b.start);
+      }
+
+      // === РЕНДЕРЫ ===
+      function renderFAQ() {
+        const faqList = document.getElementById("faqList");
+        if (!faqList) return;
+        faqList.innerHTML = "";
+        FAQ_DATA.forEach((item, index) => {
+          const li = document.createElement("div");
+          li.className = "faq-item";
+          li.setAttribute("aria-expanded", "false");
+          const button = document.createElement("button");
+          button.className = "faq-item__question";
+          button.setAttribute("aria-expanded", "false");
+          button.textContent = item.question;
+          const icon = document.createElement("span");
+          icon.className = "faq-item__icon";
+          icon.textContent = "▼";
+          button.appendChild(icon);
+          const answer = document.createElement("div");
+          answer.className = "faq-item__answer";
+          answer.textContent = item.answer;
+          button.addEventListener("click", () => {
+            const isExpanded = li.getAttribute("aria-expanded") === "true";
+            document
+              .querySelectorAll(".faq-item")
+              .forEach((el) => el.setAttribute("aria-expanded", "false"));
+            if (!isExpanded) li.setAttribute("aria-expanded", "true");
+          });
+          li.appendChild(button);
+          li.appendChild(answer);
+          faqList.appendChild(li);
+        });
+      }
+
+      function renderTimerState(diffMs) {
+        const countdownRoot = document.getElementById("countdown");
+        countdownRoot.innerHTML = "";
+        if (diffMs <= 0) {
+          countdownRoot.innerHTML = "<strong>Мероприятие началось</strong>";
+          return;
+        }
+        const totalSec = Math.floor(diffMs / 1000);
+        const days = Math.floor(totalSec / 86400);
+        const hours = Math.floor((totalSec % 86400) / 3600);
+        const mins = Math.floor((totalSec % 3600) / 60);
+        const secs = totalSec % 60;
+        ["д", "ч", "м", "с"].forEach((label, i) => {
+          const val = [days, hours, mins, secs][i];
+          const box = el("div", "timer__item");
+          const n = el("span", "timer__num", String(val).padStart(2, "0"));
+          const l = el("span", "timer__label", label);
+          box.appendChild(n);
+          box.appendChild(l);
+          countdownRoot.appendChild(box);
+        });
+      }
+
+      function startTimerLoop() {
+        let timerInterval = null;
+        function tick() {
+          const now = new Date().getTime();
+          const target = new Date(EVENT_START_ISO).getTime();
+          if (isNaN(target)) {
+            console.error("❌ Некорректная дата события:", EVENT_START_ISO);
+            return;
+          }
+          renderTimerState(target - now);
+        }
+        tick();
+        timerInterval = setInterval(tick, 1000);
+        return () => {
+          if (timerInterval) clearInterval(timerInterval);
+        };
+      }
+
+      function renderSchedule(slots) {
+        const scheduleList = document.getElementById("scheduleList");
+        if (!scheduleList) return;
+        scheduleList.innerHTML = "";
+        slots.sort(sortByStart);
+        slots.forEach((s) => {
+          const li = el(
+            "li",
+            `schedule__item${s.isBreak ? " schedule__item--break" : ""}`,
+          );
+          const timeText = s.end ? `${s.start}–${s.end}` : s.start;
+          const time = el("div", "schedule__time", timeText);
+          li.appendChild(time);
+          const info = el("div", "schedule__info");
+          const title = el("p", "schedule__titleText", s.title || "Перерыв");
+          info.appendChild(title);
+          if (s.topics && s.topics.length && s.topics[0]) {
+            const topics = el("p", "schedule__topics", s.topics.join(" • "));
+            info.appendChild(topics);
+          }
+          li.appendChild(info);
+          if (
+            (!s.isBreak && s.speakers && s.speakers.length > 0) ||
+            (s.isBreak && s.location)
+          ) {
+            const btn = el("button", "schedule__open", "Подробнее");
+            btn.dataset.openSlot = s.id;
+            li.appendChild(btn);
+          }
+          scheduleList.appendChild(li);
+        });
+      }
+
+      function setupButtonFeedback() {
+        document.querySelectorAll(".schedule__open").forEach((btn) => {
+          let isPressed = false;
+          const press = () => {
+            if (!isPressed) {
+              isPressed = true;
+              btn.style.transform = "translateY(2px) scale(0.98)";
+              btn.style.backgroundColor = "#c92b0f";
+            }
+          };
+          const release = () => {
+            if (isPressed) {
+              isPressed = false;
+              btn.style.transform = "";
+              btn.style.backgroundColor = "";
+            }
+          };
+          ["touchstart", "mousedown"].forEach((e) =>
+            btn.addEventListener(e, press),
+          );
+          ["touchend", "touchcancel", "mouseup", "mouseleave"].forEach((e) =>
+            btn.addEventListener(e, release),
+          );
+        });
+      }
+
+      function renderExpandedCarousel(speakersArray, track, indicators) {
+        track.innerHTML = "";
+        indicators.innerHTML = "";
+        let currentIndex = 0;
+        speakersArray.forEach((sp, i) => {
+          const slide = el("div", "carousel-expanded__slide");
+          if (i === 0) slide.classList.add("active");
+          const bgImg = sp.photoUrl || PLACEHOLDER_PHOTO;
+          slide.style.backgroundImage = `url(${bgImg})`;
+          const content = document.createElement("div");
+          content.className = "carousel-expanded__content";
+          content.appendChild(el("h4", null, sp.name || "Спикер"));
+          content.appendChild(el("p", null, sp.positionCompany || ""));
+          slide.appendChild(content);
+          slide.addEventListener("click", () => {
+            const slides = track.querySelectorAll(".carousel-expanded__slide");
+            const dots = indicators.querySelectorAll(".carousel-indicator");
+            slides[currentIndex].classList.remove("active");
+            dots[currentIndex].classList.remove("active");
+            currentIndex = i;
+            slides[currentIndex].classList.add("active");
+            dots[currentIndex].classList.add("active");
+          });
+          track.appendChild(slide);
+          const ind = el("div", "carousel-indicator");
+          if (i === 0) ind.classList.add("active");
+          ind.addEventListener("click", () => {
+            const slides = track.querySelectorAll(".carousel-expanded__slide");
+            const dots = indicators.querySelectorAll(".carousel-indicator");
+            slides[currentIndex].classList.remove("active");
+            dots[currentIndex].classList.remove("active");
+            currentIndex = i;
+            slides[currentIndex].classList.add("active");
+            dots[currentIndex].classList.add("active");
+          });
+          indicators.appendChild(ind);
+        });
+      }
+
+      let modalTrapCleanup = null;
+      function openModal(slot) {
+        const modal = document.getElementById("slotModal");
+        const title = document.getElementById("modalTitle");
+        const desc = document.getElementById("modalDesc");
+        const track = document.getElementById("carouselTrack");
+        const indicators = document.getElementById("carouselIndicators");
+        const prevFocus = document.activeElement;
+        modal.classList.add("is-open");
+        modal.setAttribute("aria-hidden", "false");
+        title.textContent = `${slot.start}${slot.end ? "–" + slot.end : ""} • ${slot.title}`;
+        if (slot.isBreak && slot.location) {
+          desc.textContent = slot.location;
+          track.style.display = "none";
+          indicators.style.display = "none";
+        } else {
+          desc.textContent =
+            (slot.topics || []).filter((t) => t && t.trim()).join(", ") || "";
+          track.style.display = "";
+          indicators.style.display = "";
+          const speakers = slot.speakers || [];
+          if (speakers.length === 1) track.classList.add("carousel--single");
+          else track.classList.remove("carousel--single");
+          if (speakers.length > 0)
+            renderExpandedCarousel(speakers, track, indicators);
+        }
+        const focusable = Array.from(
+          modal.querySelectorAll(
+            'button, [href], [tabindex]:not([tabindex="-1"])',
+          ),
+        );
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        const trapTab = (e) => {
+          if (e.key === "Tab") {
+            if (e.shiftKey) {
+              if (document.activeElement === first) {
+                e.preventDefault();
+                last.focus();
+              }
+            } else {
+              if (document.activeElement === last) {
+                e.preventDefault();
+                first.focus();
+              }
+            }
+          } else if (e.key === "Escape") {
+            closeModals(() => prevFocus?.focus());
+          }
+        };
+        modal.addEventListener("keydown", trapTab);
+        modalTrapCleanup = () => modal.removeEventListener("keydown", trapTab);
+        if (first) first.focus();
+      }
+
+      function closeModals(callback) {
+        const modal = document.getElementById("slotModal");
+        modal.classList.remove("is-open");
+        modal.setAttribute("aria-hidden", "true");
+        if (modalTrapCleanup) modalTrapCleanup();
+        if (callback) setTimeout(callback, 50);
+      }
+
+      // === ИНИЦИАЛИЗАЦИЯ ===
+      function initApp() {
+        document.getElementById("eventTitle").textContent = EVENT_TITLE;
+        document.getElementById("eventTagline").textContent = EVENT_TAGLINE;
+        document.getElementById("yearCopy").textContent =
+          new Date().getFullYear();
+        document.getElementById("directionsLink").href =
+          `https://yandex.ru/maps/?text=${encodeURIComponent(EVENT_ADDRESS)}`;
+
+        startTimerLoop();
+        if (SCHEDULE_VISIBLE) {
+          renderSchedule(SCHEDULE);
+          document.querySelector(".schedule").classList.add("active");
+        }
+
+        document.addEventListener("click", (e) => {
+          const btn = e.target.closest("[data-open-slot]");
+          if (btn) {
+            const slot = SCHEDULE.find((s) => s.id === btn.dataset.openSlot);
+            if (slot) openModal(slot);
+          }
+        });
+
+        document
+          .getElementById("modalClose")
+          .addEventListener("click", () => closeModals());
+        document
+          .querySelector(".modal__overlay")
+          .addEventListener("click", () => closeModals());
+
+        renderFAQ();
+        setupButtonFeedback();
+      }
+
+      if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", initApp);
+      } else {
+        initApp();
+      }
+    </script>
+  </body>
+</html>
